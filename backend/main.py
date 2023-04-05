@@ -64,6 +64,7 @@ class ChainStreamHandler(StreamingStdOutCallbackHandler):
         self.gen = gen
 
     def on_llm_new_token(self, token: str, **kwargs):
+        # self.gen.send(token.replace('\n', '[NEWLINE]'))
         self.gen.send(token)
 
 @app.post("/chat/")

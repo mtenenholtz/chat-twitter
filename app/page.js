@@ -45,8 +45,9 @@ export default function Home() {
               if (done) {
                 break;
               }
-              accumulatedText += new TextDecoder().decode(value);
-              controller.enqueue(new TextDecoder().decode(value));
+              let newToken = new TextDecoder().decode(value);
+              accumulatedText += newToken;
+              controller.enqueue(newToken);
             }
             controller.close();
             reader.releaseLock();
@@ -60,7 +61,6 @@ export default function Home() {
             return;
           }
           setOutputTextValue(accumulatedText);
-          console.log(accumulatedText);
           return reader.read().then(processText);
         });
       });
@@ -92,7 +92,7 @@ export default function Home() {
           />
         </div>
         
-        <div className="mt-6 text-center text-sm w-1/3 h-32">
+        <div className="mt-6 text-sm w-1/3 h-auto whitespace-pre-line">
           <TextOutput
             id='textOutput'
             value={outputTextValue}

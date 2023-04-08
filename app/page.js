@@ -1,111 +1,116 @@
 'use client';
 
-import "@/app/globals.css";
+import { useState, useEffect, useRef } from 'react'
 
-import { useState } from 'react';
-
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import Head from 'next/head';
-
-import TextInput from '../components/TextInput'
-import TextOutput from '../components/TextOutput'
-import ChatButton from '../components/ChatButton'
-
-const inter = Inter({ subsets: ['latin'] })
+import Head from 'next/head'
+import Header from '../components/Header'
+import ChatMessages from '../components/ChatMessages'
+import InputBar from '../components/InputBar'
 
 export default function Home() {
-  const [inputTextValue, setInputTextValue] = useState('');
-  const [outputTextValue, setOutputTextValue] = useState('');
+    const [messages, setMessages] = useState([])
+    const [input, setInput] = useState('')
+    const inputRef = useRef(null)
 
-  const handleChat = async () => {
-    if (!inputTextValue) {
-      alert('Enter some text.');
-      return;
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            handleSubmit(e)
+        }
     }
 
-    setOutputTextValue("");
-    let accumulatedText = "";
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+            if (input.trim()) {
+                const userInputMessage = { text: input, sender: 'user' }
+                let updatedMessages = [...messages, userInputMessage]
+                setMessages(updatedMessages)
 
-    fetch('http://localhost:8000/chat_stream/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            text: inputTextValue
-          }),
-        })
-      .then(response => {
-        const reader = response.body.getReader();
-        return new ReadableStream({
-          async start(controller) {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                break;
-              }
-              let newToken = new TextDecoder().decode(value);
-              accumulatedText += newToken;
-              controller.enqueue(newToken);
+                await handleChat(updatedMessages)
+
+                setInput('')
             }
-            controller.close();
-            reader.releaseLock();
-          }
+    }
+
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.style.height = 'auto'
+            inputRef.current.style.height = inputRef.current.scrollHeight + 'px'
+        }
+    }, [input])
+
+    const handleChat = async (updatedMessages) => {
+        let accumulatedText = "";
+
+        fetch('http://localhost:8000/chat_stream/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatedMessages),
+        })
+        .then(response => {
+            const reader = response.body.getReader();
+            return new ReadableStream({
+                async start(controller) {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            break;
+                        }
+                        let newToken = new TextDecoder().decode(value);
+                        accumulatedText += newToken;
+                        controller.enqueue(newToken);
+                    }
+                    controller.close();
+                    reader.releaseLock();
+                }
+            });
+        })
+        .then(stream => {
+            updatedMessages = [...updatedMessages, { text: '', sender: 'llm' }];
+            setMessages(updatedMessages);
+            const reader = stream.getReader();
+            reader.read().then(function processText({ done, value }) {
+                if (done) {
+                    return;
+                }
+                setMessages((prevMessages) => {
+                    let outputMessage = prevMessages[prevMessages.length - 1];
+                    outputMessage.text = accumulatedText;
+                    return [...prevMessages.slice(0, -1), outputMessage];
+                });
+                return reader.read().then(processText);
+            });
         });
-      })
-      .then(stream => {
-        const reader = stream.getReader();
-        reader.read().then(function processText({ done, value }) {
-          if (done) {
-            return;
-          }
-          setOutputTextValue(accumulatedText);
-          return reader.read().then(processText);
-        });
-      });
-  };
+    };
+
   
-  return (
+return (
     <>
-      <Head>
-        <title>Chat With the Algorithm</title>
-        <meta
-          name="description"
-          content="Chat with the Twitter algorithm."
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <div className="flex h-full min-h-screen flex-col items-center bg-[#00092b] px-4 pb-20 text-neutral-200 sm:px-10">
-
-        <div className="mt-10 flex flex-col items-center justify-center sm:mt-20">
-          <div className="text-4xl font-bold">Chat With the Algorithm</div>
-        </div>
-
-        <div className="mt-6 text-center text-sm w-1/3 h-32">
-          <TextInput
-            id='userInput'
-            value={inputTextValue}
-            onChange={setInputTextValue}
-          />
-        </div>
-        
-        <div className="mt-6 text-sm w-1/3 h-auto whitespace-pre-line">
-          <TextOutput
-            id='textOutput'
-            value={outputTextValue}
-          />
-        </div>
-
-        <div className="mt-6 text-center text-sm w-1/3 h-32">
-          <ChatButton
-            id='chatButton'
-            onClick={handleChat}
-          />
-        </div>
-        
+        <Head>
+            <title>Chat With the Twitter Algorithm</title>
+            <meta
+                name="description"
+                content="Chat with the Twitter algorithm."
+            />
+            <link rel="icon" href="/favicon.ico" />
+            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+        </Head>
+  
+        <div className="h-screen flex flex-col bg-gray-800 text-gray-100 font-sans font-roboto">
+            <Header />
+            <div className="flex-1 overflow-auto p-4 flex justify-center">
+                <ChatMessages messages={messages} />
+            </div>
+  
+            <div className="border-t border-gray-700">
+                <InputBar
+                    input={input}
+                    setInput={setInput}
+                    handleKeyDown={handleKeyDown}
+                    handleSubmit={handleSubmit}
+                />
+            </div>
       </div>
     </>
   )

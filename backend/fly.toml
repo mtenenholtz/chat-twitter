@@ -1,4 +1,4 @@
-# fly.toml file generated for chat-twitter-backend on 2023-04-13T15:32:24-05:00
+# fly.toml file generated for chat-twitter-backend on 2023-04-13T16:47:24-05:00
 
 app = "chat-twitter-backend"
 kill_signal = "SIGINT"
@@ -6,12 +6,6 @@ kill_timeout = 5
 mounts = []
 primary_region = "dfw"
 processes = []
-
-[build]
-  builder = "paketobuildpacks/builder:base"
-
-[env]
-  PORT = "8080"
 
 [[services]]
   internal_port = 8080

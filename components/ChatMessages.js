@@ -2,7 +2,7 @@ import React from 'react'
 
 const ChatMessages = ({ messages }) => {
   const filteredMessages = messages.filter(
-    (message) => !(message.sender !== 'user' && message.text.length === 0)
+    (message) => !(message.sender === 'systemMessage' | (message.sender !== 'user' && message.text.length === 0))
   );
 
   return (

@@ -1,0 +1,8 @@
+langchain==0.0.137
+openai
+tiktoken
+fastapi==0.95.0
+uvicorn[standard]==0.21.1
+pinecone-client[grpc]==2.2.1
+hypercorn
+gunicorn

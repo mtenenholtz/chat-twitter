@@ -11,25 +11,30 @@ const InputBar = ({ input, setInput, handleKeyDown, handleSubmit }) => {
   }, [input])
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center p-4 justify-center">
-      <div className="w-1/3 flex items-center">
-        <textarea
-          ref={inputRef}
-          rows="1"
-          placeholder="Type your message"
-          className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300 resize-none overflow-hidden bg-gray-600 text-gray-100"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-        <button
-          type="submit"
-          className="ml-4 px-4 py-2 rounded-lg bg-blue-500 text-white focus:outline-none hover:bg-blue-600"
-        >
-          Send
-        </button>
+    <div>
+      <form onSubmit={handleSubmit} className="flex items-center p-4 justify-center">
+        <div className="w-1/3 flex items-center">
+          <textarea
+            ref={inputRef}
+            rows="1"
+            placeholder="Type your message"
+            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300 resize-none overflow-hidden bg-gray-600 text-gray-100"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button
+            type="submit"
+            className="ml-4 px-4 py-2 rounded-lg bg-blue-500 text-white focus:outline-none hover:bg-blue-600"
+          >
+            Send
+          </button>
+        </div>
+      </form>
+      <div className="pb-4 text-center text-xs text-gray-400">
+        This is still a WIP, and answers may not be correct. Algorithm code last updated 2023-04-12.
       </div>
-    </form>
+    </div>
   )
 }
 

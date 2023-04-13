@@ -18,17 +18,37 @@ export default function Home() {
         }
     }
 
+    const getSystemMessage = async (userInputMessage) => {
+        const response = await fetch('https://chat-twitter-backend.fly.dev:8080/system_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userInputMessage),
+        })
+        const systemMessage = await response.json();
+        return { text: systemMessage.system_message, sender: 'systemMessage' }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
-            if (input.trim()) {
-                const userInputMessage = { text: input, sender: 'user' }
-                let updatedMessages = [...messages, userInputMessage]
-                setMessages(updatedMessages)
 
-                await handleChat(updatedMessages)
-
-                setInput('')
+        let updatedMessages = []
+        if (input.trim()) {
+            const userInputMessage = { text: input, sender: 'user' }
+            if (messages.length === 0) {
+                const systemMessage = await getSystemMessage(userInputMessage);
+                console.log(systemMessage)
+                updatedMessages = [systemMessage, userInputMessage];
+            } else {
+                updatedMessages = [...messages, userInputMessage]
             }
+            setMessages(updatedMessages)
+
+            await handleChat(updatedMessages)
+
+            setInput('')
+        }
     }
 
     useEffect(() => {
@@ -41,7 +61,7 @@ export default function Home() {
     const handleChat = async (updatedMessages) => {
         let accumulatedText = "";
 
-        fetch('http://localhost:8000/chat_stream/', {
+        fetch('https://chat-twitter-backend.fly.dev:8080/chat_stream', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

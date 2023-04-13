@@ -16,31 +16,44 @@ from langchain.schema import (
 )
 from langchain.callbacks.base import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import Pinecone
 
+import pinecone
 import openai
 import tiktoken
 import os
 
-openai.organization = os.environ['OPENAI_ORG_ID']
 app = FastAPI()
 
 origins = [
     "http://localhost",
     "http://localhost:8080",
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "https://chat-twitter.fly.dev",
+    "https://chat-twitter.fly.dev:8000"
+    "https://chat-twitter.fly.dev:8080"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=['*'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+pinecone.init(
+    api_key=os.environ['PINECONE_API_KEY'],
+    environment='us-east1-gcp'
+)
+
 class Message(BaseModel):
     text: str
     sender: str
+
+class ContextSystemMessage(BaseModel):
+    system_message: str
     
 class Chat(BaseModel):
     messages: list[dict]
@@ -71,7 +84,38 @@ class ChainStreamHandler(StreamingStdOutCallbackHandler):
     def on_llm_new_token(self, token: str, **kwargs):
         self.gen.send(token)
 
-@app.post("/chat_stream/")
+def format_context(docs):
+    context = '\n\n'.join([f'From file {d.metadata["document_id"]}:\n' + str(d.page_content) for d in docs])
+    return context
+
+@app.get("/heath")
+def health():
+    return "OK"
+
+@app.post("/system_message", response_model=ContextSystemMessage)
+def system_message(query: Message):
+    embeddings = OpenAIEmbeddings(
+        openai_api_key=os.environ['OPENAI_API_KEY'],
+        openai_organization=os.environ['OPENAI_ORG_ID'],
+    )
+    db = Pinecone(
+        index=pinecone.Index('pinecone-index'),
+        embedding_function=embeddings.embed_query,
+        text_key='text',
+        namespace='twitter-algorithm'
+    )
+
+    docs = db.similarity_search(query.text, k=10)
+    context = format_context(docs)
+
+    prompt = """Given the following context and code, answer the following question. Do not use outside context, and do not assume the user can see the provided context. Try to be as detailed as possible and reference the components that you are looking at: 
+
+    Context: {context}
+    """
+
+    return {'system_message': prompt.format(context=context)}
+
+@app.post("/chat_stream")
 async def chat_stream(chat: List[Message]):
     model_name = 'gpt-3.5-turbo'
     encoding_name = 'cl100k_base'
@@ -84,15 +128,14 @@ async def chat_stream(chat: List[Message]):
                 streaming=True,
                 callback_manager=CallbackManager([ChainStreamHandler(g)]),
                 temperature=0.7,
-                openai_api_key=os.environ['OPENAI_API_KEY']
+                openai_api_key=os.environ['OPENAI_API_KEY'],
+                openai_organization=os.environ['OPENAI_ORG_ID']
             )
 
-            # add historical messages iteratively until we reach our token limit
-            # not a perfectly accurate method, but close enough
             encoding = tiktoken.get_encoding(encoding_name)
             token_limit, num_tokens = 1000, 0
-            messages = [HumanMessage(content=chat[-1].text)]
-            for message in reversed(chat[:-1]):
+            messages = [SystemMessage(content=chat[0].text), HumanMessage(content=chat[-1].text)]
+            for message in reversed(chat[1:-1]):
                 num_tokens += 4
                 num_tokens += len(encoding.encode(message.text))
 
@@ -101,8 +144,8 @@ async def chat_stream(chat: List[Message]):
                 else:
                     new_message = HumanMessage(content=message.text) if message.sender == 'user' else AIMessage(content=message.text)
                     messages = [new_message] + messages
-                    
-            messages = [SystemMessage(content="You are a poetic assistant")] + messages
+
+            print(f'Num tokens in call: {num_tokens + len(encoding.encode(messages[0].content))  + len(encoding.encode(messages[-1].content))}')
             llm(messages)
 
         finally:

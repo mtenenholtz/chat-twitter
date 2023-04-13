@@ -38,7 +38,6 @@ export default function Home() {
             const userInputMessage = { text: input, sender: 'user' }
             if (messages.length === 0) {
                 const systemMessage = await getSystemMessage(userInputMessage);
-                console.log(systemMessage)
                 updatedMessages = [systemMessage, userInputMessage];
             } else {
                 updatedMessages = [...messages, userInputMessage]

@@ -108,7 +108,14 @@ def system_message(query: Message):
     docs = db.similarity_search(query.text, k=10)
     context = format_context(docs)
 
-    prompt = """Given the following context and code, answer the following question. Do not use outside context, and do not assume the user can see the provided context. Try to be as detailed as possible and reference the components that you are looking at: 
+    prompt = """Given the following context and code, answer the following question. Do not use outside context, and do not assume the user can see the provided context. Try to be as detailed as possible and reference the components that you are looking at.
+    If you are going to write code, make sure to specify the language of the code. For example, if you were writing Python, you would write the following:
+
+    ```python
+    <python code goes here>
+    ```
+    
+    Now, here is the relevant context: 
 
     Context: {context}
     """

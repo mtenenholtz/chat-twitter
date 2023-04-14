@@ -36,5 +36,4 @@ __pycache__/
 *$py.class
 
 chroma_logs.log
-backend/data
 embeddings_exploration.ipynb

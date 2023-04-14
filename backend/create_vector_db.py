@@ -46,28 +46,6 @@ vector_store = Pinecone(
 
 splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
-# total_tokens, corpus_summary = 0, []
-# with zipfile_from_github() as zip_ref:
-#     zip_file_list = zip_ref.namelist()
-    
-#     pbar = tqdm(zip_file_list, desc=f'Total tokens: 0')
-#     for file_name in pbar:
-#         if (file_name.endswith('/') or 
-#             any(f in file_name for f in ['.DS_Store', '.gitignore']) or 
-#             any(file_name.endswith(ext) for ext in ['.png', '.jpg', '.jpeg'])
-#         ):
-#             continue
-#         else:
-#             with zip_ref.open(file_name, 'r') as file:
-#                 file_contents = str(file.read())
-                
-#                 n_tokens = len(encoder.encode(file_contents))
-#                 total_tokens += n_tokens
-#                 corpus_summary.append({'file_name': file_name, 'n_tokens': n_tokens})
-
-#                 embed_document(vector_store, splitter, file_name, file_contents)
-#                 pbar.set_description(f'Total tokens: {total_tokens}')
-
 total_tokens, corpus_summary = 0, []
 file_texts, metadatas = [], []
 with zipfile_from_github() as zip_ref:
@@ -83,13 +61,14 @@ with zipfile_from_github() as zip_ref:
         else:
             with zip_ref.open(file_name, 'r') as file:
                 file_contents = str(file.read())
+                file_name_trunc = str(file_name).replace('the-algorithm-main/', '')
                 
                 n_tokens = len(encoder.encode(file_contents))
                 total_tokens += n_tokens
-                corpus_summary.append({'file_name': str(file_name), 'n_tokens': n_tokens})
+                corpus_summary.append({'file_name': file_name_trunc, 'n_tokens': n_tokens})
 
                 file_texts.append(file_contents)
-                metadatas.append({'document_id': str(file_name)})
+                metadatas.append({'document_id': file_name_trunc})
                 pbar.set_description(f'Total tokens: {total_tokens}')
 
 split_documents = splitter.create_documents(file_texts, metadatas=metadatas)

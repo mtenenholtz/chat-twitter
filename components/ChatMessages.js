@@ -60,12 +60,28 @@ const ChatMessages = ({ messages }) => {
   }, []);
 
   const replaceFileNamesWithLinks = (text, data) => {
-    const filenameRegex = /`?([\w-_/.]+)`?/g;
+    const validExtensions = ['.md', '.py', '.scala', '.java', '.cpp', '.rs'];
+    const filenameRegex = /`?((?:[\w/_-]+\/README)|[\w-_]+(?:\.(?:md|py|scala|java|cpp|rs)))`?/g;
     return text.replace(filenameRegex, (match, filename) => {
-      const fileExists = data.some((record) => record.file_name === filename);
-      if (fileExists) {
+      // Check if the filename is "README" with a full file path
+      const isReadmeWithPath = filename.endsWith('/README');
+      const fileExtension = filename.split('.').pop();
+      const isValidExtension = validExtensions.includes(`.${fileExtension}`);
+  
+      if (isReadmeWithPath) {
+        // Use the full file path directly to create the URL for "README"
         const url = `https://github.com/twitter/the-algorithm/blob/main/${filename}`;
         return `<a class="text-blue-500 underline cursor-pointer" href="${url}" target="_blank" rel="noopener noreferrer">${filename}</a>`;
+      } else if (isValidExtension) {
+        // Find the record in the data list that matches the basename and has a valid extension
+        const fileRecord = data.find((record) => {
+          const recordBasename = record.file_name.split('/').pop();
+          return recordBasename === filename;
+        });
+        if (fileRecord) {
+          const url = `https://github.com/twitter/the-algorithm/blob/main/${fileRecord.file_name}`;
+          return `<a class="text-blue-500 underline cursor-pointer" href="${url}" target="_blank" rel="noopener noreferrer">${filename}</a>`;
+        }
       }
       return filename;
     });

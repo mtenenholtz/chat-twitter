@@ -59,7 +59,6 @@ export default function Home() {
 
     const handleChat = async (updatedMessages) => {
         let accumulatedText = "";
-
         fetch('https://chat-twitter-backend.fly.dev/chat_stream', {
             method: 'POST',
             headers: {

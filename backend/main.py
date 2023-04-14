@@ -88,12 +88,12 @@ def format_context(docs):
     context = '\n\n'.join([f'From file {d.metadata["document_id"]}:\n' + str(d.page_content) for d in docs])
     return context
 
-@app.get("/heath")
-def health():
-    return "OK"
+def format_query(query, context):
+    return f"""Relevant context: {context}
+    
+    {query}"""
 
-@app.post("/system_message", response_model=ContextSystemMessage)
-def system_message(query: Message):
+def embedding_search(query, k):
     embeddings = OpenAIEmbeddings(
         openai_api_key=os.environ['OPENAI_API_KEY'],
         openai_organization=os.environ['OPENAI_ORG_ID'],
@@ -105,7 +105,15 @@ def system_message(query: Message):
         namespace='twitter-algorithm'
     )
 
-    docs = db.similarity_search(query.text, k=10)
+    return db.similarity_search(query, k=k)
+
+@app.get("/heath")
+def health():
+    return "OK"
+
+@app.post("/system_message", response_model=ContextSystemMessage)
+def system_message(query: Message):
+    docs = embedding_search(query.text, k=10)
     context = format_context(docs)
 
     prompt = """Given the following context and code, answer the following question. Do not use outside context, and do not assume the user can see the provided context. Try to be as detailed as possible and reference the components that you are looking at.
@@ -140,19 +148,39 @@ async def chat_stream(chat: List[Message]):
             )
 
             encoding = tiktoken.get_encoding(encoding_name)
-            token_limit, num_tokens = 1000, 0
-            messages = [SystemMessage(content=chat[0].text), HumanMessage(content=chat[-1].text)]
+
+            # the system message gets 10 new docs. Only include 2 more for new queries
+            if len(chat) > 2:
+                docs = embedding_search(chat[-1].text, k=2)
+                context = format_context(docs)
+                formatted_query = format_query(chat[-1].text, context)
+            else:
+                formatted_query = chat[-1].text
+
+            # always include the system message and the latest query in the prompt
+            system_message = SystemMessage(content=chat[0].text)
+            latest_query = HumanMessage(content=formatted_query)
+            messages = [latest_query]
+
+            # for all the rest of the messages, iterate over them in reverse and fit as many in as possible
+            token_limit = 4000
+            num_tokens = len(encoding.encode(chat[0].text)) + len(encoding.encode(formatted_query))
             for message in reversed(chat[1:-1]):
+                # count the number of new tokens
                 num_tokens += 4
                 num_tokens += len(encoding.encode(message.text))
 
                 if num_tokens > token_limit:
+                    # if we're over the token limit, stick with what we've got
                     break
                 else:
+                    # otherwise, add the new message in after the system prompt, but before the rest of the messages we've added
                     new_message = HumanMessage(content=message.text) if message.sender == 'user' else AIMessage(content=message.text)
                     messages = [new_message] + messages
 
-            print(f'Num tokens in call: {num_tokens + len(encoding.encode(messages[0].content))  + len(encoding.encode(messages[-1].content))}')
+            # add the system message to the beginning of the prompt
+            messages = [system_message] + messages
+
             llm(messages)
 
         finally:

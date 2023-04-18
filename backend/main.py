@@ -116,8 +116,8 @@ def system_message(query: Message):
     docs = embedding_search(query.text, k=10)
     context = format_context(docs)
 
-    prompt = """Given the following context and code, answer the following question. Do not use outside context, and do not assume the user can see the provided context. Try to be as detailed as possible and reference the components that you are looking at.
-    If you are going to write code, make sure to specify the language of the code. For example, if you were writing Python, you would write the following:
+    prompt = """Given the following context and code, answer the following question. Do not use outside context, and do not assume the user can see the provided context. Try to be as detailed as possible and reference the components that you are looking at. Keep in mind that these are only code snippets, and more snippets may be added during the conversation.
+    Do not generate code, only reference the exact code snippets that you have been provided with. If you are going to write code, make sure to specify the language of the code. For example, if you were writing Python, you would write the following:
 
     ```python
     <python code goes here>
@@ -151,9 +151,27 @@ async def chat_stream(chat: List[Message]):
 
             # the system message gets 10 new docs. Only include 2 more for new queries
             if len(chat) > 2:
-                docs = embedding_search(chat[-1].text, k=2)
+                system_message, latest_query = [chat[0].text, chat[-1].text]
+                keep_messages = [system_message, latest_query]
+                new_messages = []
+
+                token_count = sum([len(encoding.encode(m)) for m in keep_messages])
+                # fit in as many of the previous human messages as possible
+                for message in chat[1:-1:2]:
+                    token_count += len(encoding.encode(message.text))
+
+                    if token_count > 750:
+                        break
+
+                    new_messages.append(message.text)
+                    
+                query_messages = [system_message] + new_messages + [latest_query]
+                query_text = '\n'.join(query_messages)
+
+                # add some more context
+                docs = embedding_search(query_text, k=2)
                 context = format_context(docs)
-                formatted_query = format_query(chat[-1].text, context)
+                formatted_query = format_query(latest_query, context)
             else:
                 formatted_query = chat[-1].text
 

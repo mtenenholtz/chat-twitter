@@ -13,7 +13,7 @@ const InputBar = ({ input, setInput, handleKeyDown, handleSubmit }) => {
   return (
     <div>
       <form onSubmit={handleSubmit} className="flex items-center px-4 py-2 justify-center md:px-4 md:py-4">
-        <div className="w-full md:w-1/3 flex items-center">
+        <div className="w-full md:w-1/2 flex items-center">
           <textarea
             ref={inputRef}
             rows="1"

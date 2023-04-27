@@ -88,7 +88,7 @@ const ChatMessages = ({ messages }) => {
   };
 
   return (
-    <div className="w-full md:w-1/3">
+    <div className="w-full md:w-1/2 md:max-w-xl">
       {filteredMessages.map((message, index) => (
         <div
           key={index}

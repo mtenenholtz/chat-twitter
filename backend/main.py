@@ -24,6 +24,10 @@ import openai
 import tiktoken
 import os
 
+# Import dotenv and load the variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 app = FastAPI()
 
 origins = [
@@ -45,7 +49,7 @@ app.add_middleware(
 
 pinecone.init(
     api_key=os.environ['PINECONE_API_KEY'],
-    environment='us-east1-gcp'
+    environment=os.environ['ENVIRONMENT']
 )
 
 class Message(BaseModel):
@@ -99,15 +103,15 @@ def embedding_search(query, k):
         openai_organization=os.environ['OPENAI_ORG_ID'],
     )
     db = Pinecone(
-        index=pinecone.Index('pinecone-index'),
+        index=os.environ['PINECONE_INDEX'],
         embedding_function=embeddings.embed_query,
         text_key='text',
-        namespace='twitter-algorithm'
+        namespace=os.environ['NAMESPACE']
     )
 
     return db.similarity_search(query, k=k)
 
-@app.get("/heath")
+@app.get("/health")
 def health():
     return "OK"
 
@@ -132,7 +136,7 @@ def system_message(query: Message):
 
 @app.post("/chat_stream")
 async def chat_stream(chat: List[Message]):
-    model_name = 'gpt-3.5-turbo'
+    model_name = os.environ['MODEL_NAME']
     encoding_name = 'cl100k_base'
 
     def llm_thread(g, prompt):
@@ -142,7 +146,7 @@ async def chat_stream(chat: List[Message]):
                 verbose=True,
                 streaming=True,
                 callback_manager=CallbackManager([ChainStreamHandler(g)]),
-                temperature=0.7,
+                temperature=os.environ['TEMPERATURE'],
                 openai_api_key=os.environ['OPENAI_API_KEY'],
                 openai_organization=os.environ['OPENAI_ORG_ID']
             )

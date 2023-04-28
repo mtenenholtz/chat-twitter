@@ -6,3 +6,5 @@ uvicorn[standard]==0.21.1
 pinecone-client[grpc]==2.2.1
 hypercorn
 gunicorn
+pandas
+python-dotenv

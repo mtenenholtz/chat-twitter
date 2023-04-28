@@ -9,6 +9,7 @@ import tiktoken
 from tqdm import tqdm
 
 import os
+import re
 import zipfile
 from urllib.request import urlopen
 from io import BytesIO
@@ -68,7 +69,7 @@ with zipfile_from_github() as zip_ref:
         else:
             with zip_ref.open(file_name, 'r') as file:
                 file_contents = str(file.read())
-                file_name_trunc = str(file_name).replace('the-algorithm-main/', '')
+                file_name_trunc = re.sub(r'^[^/]+/', '', str(file_name))
                 
                 n_tokens = len(encoder.encode(file_contents))
                 total_tokens += n_tokens

@@ -35,10 +35,10 @@ encoder = tiktoken.get_encoding('cl100k_base')
 
 pinecone.init(
     api_key=os.environ['PINECONE_API_KEY'],
-    environment='us-east1-gcp'
+    environment=os.environ.get('PINECONE_ENV', 'us-east1-gcp')
 )
 vector_store = Pinecone(
-    index=pinecone.Index('pinecone-index'),
+    index=pinecone.Index(os.environ.get('PINECONE_INDEX', 'pinecone-index')),
     embedding_function=embeddings.embed_query,
     text_key='text',
     namespace='twitter-algorithm'
@@ -75,7 +75,7 @@ split_documents = splitter.create_documents(file_texts, metadatas=metadatas)
 vector_store.from_documents(
     documents=split_documents, 
     embedding=embeddings,
-    index_name='pinecone-index',
+    index_name=os.environ.get('PINECONE_INDEX', 'pinecone-index'),
     namespace='twitter-algorithm'
 )
 

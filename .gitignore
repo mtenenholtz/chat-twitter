@@ -38,3 +38,4 @@ __pycache__/
 chroma_logs.log
 embeddings_exploration.ipynb
 fly.toml
+.env.local

@@ -45,7 +45,7 @@ app.add_middleware(
 
 pinecone.init(
     api_key=os.environ['PINECONE_API_KEY'],
-    environment='us-east1-gcp'
+    environment=os.environ.get('PINECONE_ENV', 'us-east1-gcp')
 )
 
 class Message(BaseModel):
@@ -99,7 +99,7 @@ def embedding_search(query, k):
         openai_organization=os.environ['OPENAI_ORG_ID'],
     )
     db = Pinecone(
-        index=pinecone.Index('pinecone-index'),
+        index=pinecone.Index(os.environ.get('PINECONE_INDEX', 'pinecone-index')),
         embedding_function=embeddings.embed_query,
         text_key='text',
         namespace='twitter-algorithm'

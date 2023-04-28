@@ -18,6 +18,8 @@ Right now, I'm footing the OpenAI bill on the public instance. But I may require
 OPENAI_API_KEY=...
 OPENAI_ORG_ID=... # organization id, found in Manage account > settings
 PINECONE_API_KEY=...
+PINECONE_ENV=... # default 'us-east1-gcp'
+PINECONE_INDEX=... # default 'pinecone-index'
 ```
 
 2. Clone the repo
@@ -46,14 +48,14 @@ npm run dev
 pip install -r requirements.txt
 ```
 
-6. Embed the Twitter codebase
+6. Set up a Pinecone index. Give it a vector dimension of 1536 and name it `pinecone-index`. You can change this with the `PINECONE_INDEX` environment variable if you want.
+
+7. Embed the Twitter codebase
 
 ```
 # in the backend/ directory
 python create_vector_db.py
 ```
-
-7. Set up a Pinecone index. Give it a vector dimension of 1536 and name it `pinecone-index`. You can change this in `backend/main.py` if you want.
 
 8. Run the backend server
 
@@ -61,7 +63,7 @@ python create_vector_db.py
 uvicorn main:app --reload
 ```
 
-9. The URL for the backend is currently hard coded to the live server URL. You will have to change this to localhost or your other server name.
+9. The URL for the backend is constructed from the environment variables in `.env.local`. Use the `env-example.local` file as an example.
 
 ## Potential improvements
 

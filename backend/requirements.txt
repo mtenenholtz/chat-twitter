@@ -7,3 +7,4 @@ pinecone-client[grpc]==2.2.1
 hypercorn
 gunicorn
 pandas
+python-dotenv

@@ -13,6 +13,10 @@ import zipfile
 from urllib.request import urlopen
 from io import BytesIO
 
+# Import dotenv and load the variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 def embed_document(vector_db, splitter, document_id, document):
     metadata = [{'document_id': document_id}]
     split_documents = splitter.create_documents([str(document)], metadatas=metadata)
@@ -23,7 +27,7 @@ def embed_document(vector_db, splitter, document_id, document):
     docsearch = vector_db.add_texts(texts, metadatas=metadatas)
 
 def zipfile_from_github():
-    http_response = urlopen('https://github.com/twitter/the-algorithm/archive/refs/heads/main.zip')
+    http_response = urlopen(os.environ['ZIP_URL'])
     zf = BytesIO(http_response.read())
     return zipfile.ZipFile(zf, 'r')
 
@@ -35,16 +39,19 @@ encoder = tiktoken.get_encoding('cl100k_base')
 
 pinecone.init(
     api_key=os.environ['PINECONE_API_KEY'],
-    environment='us-east1-gcp'
+    environment=os.environ['ENVIRONMENT']
 )
 vector_store = Pinecone(
-    index=pinecone.Index('pinecone-index'),
+    index=pinecone.Index(os.environ['PINECONE_INDEX']),
     embedding_function=embeddings.embed_query,
     text_key='text',
-    namespace='twitter-algorithm'
+    namespace=os.environ['NAMESPACE']
 )
 
-splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=int(os.environ['CHUNK_SIZE']),
+    chunk_overlap=int(os.environ['CHUNK_OVERLAP'])
+    )
 
 total_tokens, corpus_summary = 0, []
 file_texts, metadatas = [], []
@@ -75,8 +82,8 @@ split_documents = splitter.create_documents(file_texts, metadatas=metadatas)
 vector_store.from_documents(
     documents=split_documents, 
     embedding=embeddings,
-    index_name='pinecone-index',
-    namespace='twitter-algorithm'
+    index_name=os.environ['PINECONE_INDEX'],
+    namespace=os.environ['NAMESPACE']
 )
 
 pd.DataFrame.from_records(corpus_summary).to_csv('data/corpus_summary.csv', index=False)

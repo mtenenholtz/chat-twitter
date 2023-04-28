@@ -14,11 +14,13 @@ Right now, I'm footing the OpenAI bill on the public instance. But I may require
 
 1. Set up environment variables
 
+Copy the .env.template file to create a .env file using the following command:
+```bash
+cp .env.template .env
 ```
-OPENAI_API_KEY=...
-OPENAI_ORG_ID=... # organization id, found in Manage account > settings
-PINECONE_API_KEY=...
-```
+
+Update the .env file with your values:
+Replace the placeholder values with your actual API keys, organization ID, and other configuration values as needed. Save the file when you're done.
 
 2. Clone the repo
 
@@ -43,6 +45,7 @@ npm run dev
 
 ```
 # in the backend/ directory
+cd backend 
 pip install -r requirements.txt
 ```
 

@@ -13,6 +13,10 @@ import zipfile
 from urllib.request import urlopen
 from io import BytesIO
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 def embed_document(vector_db, splitter, document_id, document):
     metadata = [{'document_id': document_id}]
     split_documents = splitter.create_documents([str(document)], metadatas=metadata)

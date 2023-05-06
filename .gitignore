@@ -31,6 +31,9 @@ yarn-error.log*
 # csv files
 *.csv
 
+# vercel
+.vercel
+
 __pycache__/
 *.py[cod]
 *$py.class

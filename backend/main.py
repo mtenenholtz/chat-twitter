@@ -24,6 +24,10 @@ import openai
 import tiktoken
 import os
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 app = FastAPI()
 
 origins = [
@@ -107,7 +111,7 @@ def embedding_search(query, k):
 
     return db.similarity_search(query, k=k)
 
-@app.get("/heath")
+@app.get("/health")
 def health():
     return "OK"
 

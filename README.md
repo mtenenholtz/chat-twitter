@@ -66,7 +66,7 @@ python create_vector_db.py
 uvicorn main:app --reload
 ```
 
-9. The URL for the backend is currently hard coded to the live server URL. You will have to change this to localhost or your other server name. This can be done in the `.env` file.
+9. The URL for the backend is currently hard coded to the live server URL. You will have to change this to localhost or your other server name. This can be done in the `.env.local` file in the root directory of your project.
 
 ## Potential improvements
 

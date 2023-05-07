@@ -12,48 +12,53 @@ Right now, I'm footing the OpenAI bill on the public instance. But I may require
 
 ## Running locally
 
-1. Set up environment variables
-
-```
-OPENAI_API_KEY=...
-OPENAI_ORG_ID=... # organization id, found in Manage account > settings
-PINECONE_API_KEY=...
-```
-
-2. Clone the repo
+1. Clone the repo
 
 ```
 git clone https://github.com/mtenenholtz/chat-twitter.git
 cd chat-twitter
 ```
 
-3. Install Node dependencies
+2. Install Node dependencies
 
 ```
 npm i
 ```
 
-4. Run the Node server
+3. Run the Node server
 
 ```
 npm run dev
 ```
 
-5. In another terminal, install the Python dependencies
+4. In another terminal, install the Python dependencies
 
 ```
-# in the backend/ directory
+# switch to the the backend/ directory and install the required libraries
+cd backend 
 pip install -r requirements.txt
 ```
 
-6. Embed the Twitter codebase
+5. Set up environment variables
+
+Copy the .env-template file to create a .env file using the following command:
+```bash
+cp .env-template .env
+```
+
+Update the .env file with your values:
+Replace the placeholder values with your actual API keys, organization ID, and other configuration values as needed. Save the file when you're done.
+
+
+6. Set up a Pinecone index. Give it a vector dimension of 1536, use cosine for the similarity metric and name it `pinecone-index`. You can change the index name in the `.env` file if you want.
+
+
+7. Embed the Twitter codebase
 
 ```
-# in the backend/ directory
+# still in the backend/ directory
 python create_vector_db.py
 ```
-
-7. Set up a Pinecone index. Give it a vector dimension of 1536 and name it `pinecone-index`. You can change this in `backend/main.py` if you want.
 
 8. Run the backend server
 
@@ -61,7 +66,7 @@ python create_vector_db.py
 uvicorn main:app --reload
 ```
 
-9. The URL for the backend is currently hard coded to the live server URL. You will have to change this to localhost or your other server name.
+9. The URL for the backend is currently hard coded to the live server URL. You will have to change this to localhost or your other server name. This can be done in the `.env` file.
 
 ## Potential improvements
 

@@ -103,7 +103,7 @@ def embedding_search(query, k):
         openai_organization=os.environ['OPENAI_ORG_ID'],
     )
     db = Pinecone(
-        index=os.environ['PINECONE_INDEX'],
+        index=pinecone.Index(os.environ['PINECONE_INDEX']),
         embedding_function=embeddings.embed_query,
         text_key='text',
         namespace=os.environ['PINECONE_NAMESPACE']
@@ -117,7 +117,7 @@ def health():
 
 @app.post("/system_message", response_model=ContextSystemMessage)
 def system_message(query: Message):
-    docs = embedding_search(query.text, k=os.environ['NUM_RELEVANT_DOCS'])
+    docs = embedding_search(query.text, k=int(os.environ['NUM_RELEVANT_DOCS']))
     context = format_context(docs)
 
     prompt = """Given the following context and code, answer the following question. Do not use outside context, and do not assume the user can see the provided context. Try to be as detailed as possible and reference the components that you are looking at. Keep in mind that these are only code snippets, and more snippets may be added during the conversation.
@@ -137,7 +137,7 @@ def system_message(query: Message):
 @app.post("/chat_stream")
 async def chat_stream(chat: List[Message]):
     model_name = os.environ['MODEL_NAME']
-    encoding_name = os.environ['ENCODING_NAME']
+    encoding_name = os.environ['ENCODING']
 
     def llm_thread(g, prompt):
         try:
@@ -154,7 +154,7 @@ async def chat_stream(chat: List[Message]):
             encoding = tiktoken.get_encoding(encoding_name)
 
             # the system message gets NUM_RELEVANT_DOCS new docs. Only include NUM_RELEVANT_FOLLOWUP_DOCS more for new queries
-            if len(chat) > os.environ['NUM_RELEVANT_FOLLOWUP_DOCS']:
+            if len(chat) > int(os.environ['NUM_RELEVANT_FOLLOWUP_DOCS']):
                 system_message, latest_query = [chat[0].text, chat[-1].text]
                 keep_messages = [system_message, latest_query]
                 new_messages = []
@@ -164,7 +164,7 @@ async def chat_stream(chat: List[Message]):
                 for message in chat[1:-1:2]:
                     token_count += len(encoding.encode(message.text))
 
-                    if token_count > os.environ['MAX_HUMAN_TOKENS']:
+                    if token_count > int(os.environ['MAX_HUMAN_TOKENS']):
                         break
 
                     new_messages.append(message.text)
@@ -173,7 +173,7 @@ async def chat_stream(chat: List[Message]):
                 query_text = '\n'.join(query_messages)
 
                 # add some more context
-                docs = embedding_search(query_text, k=os.environ['NUM_RELEVANT_FOLLOWUP_DOCS'])
+                docs = embedding_search(query_text, k=int(os.environ['NUM_RELEVANT_FOLLOWUP_DOCS']))
                 context = format_context(docs)
                 formatted_query = format_query(latest_query, context)
             else:
@@ -185,11 +185,11 @@ async def chat_stream(chat: List[Message]):
             messages = [latest_query]
 
             # for all the rest of the messages, iterate over them in reverse and fit as many in as possible
-            token_limit = os.environ['MAX_TOKENS']
+            token_limit = int(os.environ['MAX_TOKENS'])
             num_tokens = len(encoding.encode(chat[0].text)) + len(encoding.encode(formatted_query))
             for message in reversed(chat[1:-1]):
                 # count the number of new tokens
-                num_tokens += os.environ['TOKENS_PER_MESSAGE']
+                num_tokens += int(os.environ['TOKENS_PER_MESSAGE'])
                 num_tokens += len(encoding.encode(message.text))
 
                 if num_tokens > token_limit:

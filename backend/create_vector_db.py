@@ -54,7 +54,7 @@ with zipfile_from_github() as zip_ref:
     pbar = tqdm(zip_file_list, desc=f'Total tokens: 0')
     for file_name in pbar:
         if (file_name.endswith('/') or 
-            any(f in file_name for f in ['.DS_Store', '.gitignore']) or 
+            file_name in ['.DS_Store', '.gitignore'] or 
             any(file_name.endswith(ext) for ext in ['.png', '.jpg', '.jpeg'])
         ):
             continue
